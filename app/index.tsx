@@ -19,26 +19,30 @@ interface FeatureCardProps {
   onPress: () => void;
 }
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, color, onPress }) => (
-  <TouchableOpacity style={[commonStyles.card, { width: (width - 60) / 2 }]} onPress={onPress}>
-    <View style={[commonStyles.centerContent, { marginBottom: 12 }]}>
-      <View style={{
-        backgroundColor: color + '20',
-        borderRadius: 24,
-        padding: 12,
-        marginBottom: 8,
-      }}>
-        <Ionicons name={icon} size={24} color={color} />
+const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, color, onPress }) => {
+  console.log('Rendering FeatureCard:', title);
+  
+  return (
+    <TouchableOpacity style={[commonStyles.card, { width: (width - 60) / 2 }]} onPress={onPress}>
+      <View style={[commonStyles.centerContent, { marginBottom: 12 }]}>
+        <View style={{
+          backgroundColor: color + '20',
+          borderRadius: 24,
+          padding: 12,
+          marginBottom: 8,
+        }}>
+          <Ionicons name={icon} size={24} color={color} />
+        </View>
+        <Text style={[commonStyles.text, { fontWeight: '600', textAlign: 'center', marginBottom: 4 }]}>
+          {title}
+        </Text>
+        <Text style={[commonStyles.textLight, { textAlign: 'center', fontSize: 12 }]}>
+          {description}
+        </Text>
       </View>
-      <Text style={[commonStyles.text, { fontWeight: '600', textAlign: 'center', marginBottom: 4 }]}>
-        {title}
-      </Text>
-      <Text style={[commonStyles.textLight, { textAlign: 'center', fontSize: 12 }]}>
-        {description}
-      </Text>
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 interface QuickActionProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -47,31 +51,35 @@ interface QuickActionProps {
   onPress: () => void;
 }
 
-const QuickAction: React.FC<QuickActionProps> = ({ icon, title, subtitle, onPress }) => (
-  <TouchableOpacity style={commonStyles.cardSmall} onPress={onPress}>
-    <View style={commonStyles.row}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-        <View style={{
-          backgroundColor: colors.accent + '20',
-          borderRadius: 20,
-          padding: 8,
-          marginRight: 12,
-        }}>
-          <Ionicons name={icon} size={20} color={colors.accent} />
+const QuickAction: React.FC<QuickActionProps> = ({ icon, title, subtitle, onPress }) => {
+  console.log('Rendering QuickAction:', title);
+  
+  return (
+    <TouchableOpacity style={commonStyles.cardSmall} onPress={onPress}>
+      <View style={commonStyles.row}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          <View style={{
+            backgroundColor: colors.accent + '20',
+            borderRadius: 20,
+            padding: 8,
+            marginRight: 12,
+          }}>
+            <Ionicons name={icon} size={20} color={colors.accent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 2 }]}>
+              {title}
+            </Text>
+            <Text style={commonStyles.textLight}>
+              {subtitle}
+            </Text>
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 2 }]}>
-            {title}
-          </Text>
-          <Text style={commonStyles.textLight}>
-            {subtitle}
-          </Text>
-        </View>
+        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </View>
-      <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 export default function MainScreen() {
   const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
@@ -85,11 +93,13 @@ export default function MainScreen() {
     Lato_700Bold,
   });
 
+  console.log('MainScreen rendered, fonts loaded:', fontsLoaded);
+
   if (!fontsLoaded) {
     return (
       <SafeAreaView style={commonStyles.container}>
         <View style={[commonStyles.container, commonStyles.centerContent]}>
-          <Text style={commonStyles.text}>Loading...</Text>
+          <Text style={commonStyles.text}>Loading fonts...</Text>
         </View>
       </SafeAreaView>
     );
@@ -105,20 +115,55 @@ export default function MainScreen() {
     console.log('Feature pressed:', feature);
     switch (feature) {
       case 'Guest Management':
+        console.log('Navigating to guests screen');
         router.push('/guests');
         break;
       case 'Timeline':
+        console.log('Navigating to timeline screen');
         router.push('/timeline');
         break;
       case 'Budget Tracker':
+        console.log('Navigating to budget screen');
         router.push('/budget');
         break;
       case 'Vendor Hub':
+        console.log('Opening vendor hub bottom sheet');
         setSelectedAction('Vendor Hub');
         setIsBottomSheetVisible(true);
         break;
       default:
         console.log('Unknown feature:', feature);
+    }
+  };
+
+  const handleCloseBottomSheet = () => {
+    console.log('Closing bottom sheet');
+    setIsBottomSheetVisible(false);
+  };
+
+  const handleGetStarted = () => {
+    console.log('Get started button pressed for:', selectedAction);
+    setIsBottomSheetVisible(false);
+    
+    // Navigate to appropriate screen based on selected action
+    switch (selectedAction) {
+      case 'Add New Guest':
+        router.push('/guests');
+        break;
+      case 'Update Checklist':
+        router.push('/timeline');
+        break;
+      case 'Inspiration Board':
+        console.log('Inspiration board feature not yet implemented');
+        break;
+      case 'Contact Vendor':
+        console.log('Contact vendor feature not yet implemented');
+        break;
+      case 'Vendor Hub':
+        console.log('Vendor hub feature not yet implemented');
+        break;
+      default:
+        console.log('No specific action for:', selectedAction);
     }
   };
 
@@ -183,7 +228,10 @@ export default function MainScreen() {
           <View style={commonStyles.row}>
             <TouchableOpacity 
               style={buttonStyles.primary}
-              onPress={() => router.push('/timeline')}
+              onPress={() => {
+                console.log('Start Planning button pressed');
+                router.push('/timeline');
+              }}
             >
               <Text style={[commonStyles.text, { color: colors.text, fontWeight: '600' }]}>
                 Start Planning
@@ -191,7 +239,10 @@ export default function MainScreen() {
             </TouchableOpacity>
             <TouchableOpacity 
               style={[buttonStyles.outline, { marginLeft: 12 }]}
-              onPress={() => router.push('/timeline')}
+              onPress={() => {
+                console.log('View Timeline button pressed');
+                router.push('/timeline');
+              }}
             >
               <Text style={[commonStyles.text, { color: colors.accent, fontWeight: '600' }]}>
                 View Timeline
@@ -284,7 +335,10 @@ export default function MainScreen() {
             <View style={commonStyles.row}>
               <TouchableOpacity 
                 style={commonStyles.centerContent}
-                onPress={() => router.push('/guests')}
+                onPress={() => {
+                  console.log('Guests stat pressed');
+                  router.push('/guests');
+                }}
               >
                 <Text style={[commonStyles.text, { fontWeight: '700', fontSize: 24, color: colors.accent }]}>
                   150
@@ -303,7 +357,10 @@ export default function MainScreen() {
               </View>
               <TouchableOpacity 
                 style={commonStyles.centerContent}
-                onPress={() => router.push('/budget')}
+                onPress={() => {
+                  console.log('Budget stat pressed');
+                  router.push('/budget');
+                }}
               >
                 <Text style={[commonStyles.text, { fontWeight: '700', fontSize: 24, color: colors.success }]}>
                   85%
@@ -319,7 +376,7 @@ export default function MainScreen() {
 
       <SimpleBottomSheet
         isVisible={isBottomSheetVisible}
-        onClose={() => setIsBottomSheetVisible(false)}
+        onClose={handleCloseBottomSheet}
       >
         <View style={{ padding: 20 }}>
           <Text style={[commonStyles.sectionTitle, { textAlign: 'center', marginBottom: 16 }]}>
@@ -331,7 +388,7 @@ export default function MainScreen() {
           </Text>
           <TouchableOpacity 
             style={buttonStyles.primary}
-            onPress={() => setIsBottomSheetVisible(false)}
+            onPress={handleGetStarted}
           >
             <Text style={[commonStyles.text, { fontWeight: '600' }]}>
               Get Started

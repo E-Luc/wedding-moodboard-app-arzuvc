@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { commonStyles, colors, buttonStyles } from '../styles/commonStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +17,12 @@ interface TimelineItem {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-const TimelineCard: React.FC<{ item: TimelineItem; onToggle: (id: string) => void }> = ({ item, onToggle }) => {
+const TimelineCard: React.FC<{ 
+  item: TimelineItem; 
+  onToggle: (id: string) => void; 
+  onEdit: (item: TimelineItem) => void;
+  onDelete: (id: string) => void;
+}> = ({ item, onToggle, onEdit, onDelete }) => {
   const getCategoryColor = (category: TimelineItem['category']) => {
     switch (category) {
       case 'planning': return colors.accent;
@@ -28,15 +33,35 @@ const TimelineCard: React.FC<{ item: TimelineItem; onToggle: (id: string) => voi
     }
   };
 
+  const handleLongPress = () => {
+    console.log('Long press on timeline item:', item.title);
+    Alert.alert(
+      'Task Options',
+      `What would you like to do with "${item.title}"?`,
+      [
+        { text: 'Edit', onPress: () => onEdit(item) },
+        { text: 'Delete', onPress: () => onDelete(item.id), style: 'destructive' },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
   return (
-    <View style={[commonStyles.cardSmall, { 
-      opacity: item.completed ? 0.7 : 1,
-      borderLeftWidth: 4,
-      borderLeftColor: getCategoryColor(item.category),
-    }]}>
+    <TouchableOpacity 
+      style={[commonStyles.cardSmall, { 
+        opacity: item.completed ? 0.7 : 1,
+        borderLeftWidth: 4,
+        borderLeftColor: getCategoryColor(item.category),
+      }]}
+      onLongPress={handleLongPress}
+      delayLongPress={500}
+    >
       <View style={commonStyles.row}>
         <TouchableOpacity 
-          onPress={() => onToggle(item.id)}
+          onPress={() => {
+            console.log('Toggling completion for:', item.title);
+            onToggle(item.id);
+          }}
           style={{ marginRight: 12 }}
         >
           <Ionicons 
@@ -82,7 +107,7 @@ const TimelineCard: React.FC<{ item: TimelineItem; onToggle: (id: string) => voi
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -180,6 +205,11 @@ export default function TimelineScreen() {
     },
   ]);
 
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [filterCategory, setFilterCategory] = useState<TimelineItem['category'] | 'all'>('all');
+
   const handleToggleComplete = (id: string) => {
     console.log('Toggling timeline item:', id);
     setTimelineItems(prev => prev.map(item =>
@@ -187,22 +217,100 @@ export default function TimelineScreen() {
     ));
   };
 
+  const handleEditTask = (task: TimelineItem) => {
+    console.log('Editing task:', task.title);
+    Alert.alert('Edit Task', `Editing functionality for "${task.title}" will be implemented soon.`);
+  };
+
+  const handleDeleteTask = (id: string) => {
+    console.log('Deleting task:', id);
+    const taskToDelete = timelineItems.find(t => t.id === id);
+    if (taskToDelete) {
+      Alert.alert(
+        'Delete Task',
+        `Are you sure you want to remove "${taskToDelete.title}" from your timeline?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Delete', 
+            style: 'destructive',
+            onPress: () => {
+              setTimelineItems(prev => prev.filter(item => item.id !== id));
+              console.log('Task deleted:', taskToDelete.title);
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  const handleAddTask = () => {
+    console.log('Adding new task');
+    setIsAddingTask(true);
+  };
+
+  const handleSaveNewTask = () => {
+    if (newTaskTitle.trim() && newTaskDescription.trim()) {
+      const newTask: TimelineItem = {
+        id: Date.now().toString(),
+        title: newTaskTitle.trim(),
+        description: newTaskDescription.trim(),
+        date: 'TBD',
+        time: 'TBD',
+        completed: false,
+        category: 'planning',
+        icon: 'checkmark-circle'
+      };
+      
+      console.log('Saving new task:', newTask);
+      setTimelineItems(prev => [...prev, newTask]);
+      setNewTaskTitle('');
+      setNewTaskDescription('');
+      setIsAddingTask(false);
+    } else {
+      Alert.alert('Error', 'Please enter both title and description for the task.');
+    }
+  };
+
+  const handleCancelAddTask = () => {
+    console.log('Cancelling add task');
+    setNewTaskTitle('');
+    setNewTaskDescription('');
+    setIsAddingTask(false);
+  };
+
+  const filteredItems = filterCategory === 'all' 
+    ? timelineItems 
+    : timelineItems.filter(item => item.category === filterCategory);
+
   const completedCount = timelineItems.filter(item => item.completed).length;
   const totalCount = timelineItems.length;
-  const progressPercentage = (completedCount / totalCount) * 100;
+  const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+  const categoryStats = {
+    planning: timelineItems.filter(item => item.category === 'planning').length,
+    booking: timelineItems.filter(item => item.category === 'booking').length,
+    preparation: timelineItems.filter(item => item.category === 'preparation').length,
+    ceremony: timelineItems.filter(item => item.category === 'ceremony').length,
+  };
+
+  console.log('TimelineScreen rendered with', totalCount, 'tasks,', completedCount, 'completed');
 
   return (
     <SafeAreaView style={commonStyles.container}>
       <View style={commonStyles.content}>
         {/* Header */}
         <View style={[commonStyles.row, { marginBottom: 24 }]}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => {
+            console.log('Back button pressed');
+            router.back();
+          }}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={[commonStyles.title, { fontSize: 24, marginBottom: 0 }]}>
             Wedding Timeline
           </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleAddTask}>
             <Ionicons name="add" size={24} color={colors.accent} />
           </TouchableOpacity>
         </View>
@@ -249,19 +357,116 @@ export default function TimelineScreen() {
           </View>
         </View>
 
+        {/* Category Filter */}
+        <View style={[commonStyles.card, { marginBottom: 16 }]}>
+          <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 12 }]}>
+            Filter by Category
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {(['all', 'planning', 'booking', 'preparation', 'ceremony'] as const).map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    buttonStyles.outline,
+                    { 
+                      paddingHorizontal: 16, 
+                      paddingVertical: 8,
+                      backgroundColor: filterCategory === category ? colors.accent : 'transparent'
+                    }
+                  ]}
+                  onPress={() => {
+                    console.log('Filter changed to:', category);
+                    setFilterCategory(category);
+                  }}
+                >
+                  <Text style={[
+                    commonStyles.text, 
+                    { 
+                      color: filterCategory === category ? colors.text : colors.accent,
+                      fontWeight: '600',
+                      fontSize: 14
+                    }
+                  ]}>
+                    {category === 'all' ? 'All' : category.charAt(0).toUpperCase() + category.slice(1)}
+                    {category !== 'all' && ` (${categoryStats[category]})`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Add Task Form */}
+        {isAddingTask && (
+          <View style={[commonStyles.card, { marginBottom: 16 }]}>
+            <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 12 }]}>
+              Add New Task
+            </Text>
+            <TextInput
+              style={[commonStyles.cardSmall, { marginBottom: 12 }]}
+              placeholder="Task Title"
+              placeholderTextColor={colors.textLight}
+              value={newTaskTitle}
+              onChangeText={setNewTaskTitle}
+            />
+            <TextInput
+              style={[commonStyles.cardSmall, { marginBottom: 16 }]}
+              placeholder="Task Description"
+              placeholderTextColor={colors.textLight}
+              value={newTaskDescription}
+              onChangeText={setNewTaskDescription}
+              multiline
+              numberOfLines={3}
+            />
+            <View style={commonStyles.row}>
+              <TouchableOpacity 
+                style={[buttonStyles.outline, { flex: 1, marginRight: 8 }]}
+                onPress={handleCancelAddTask}
+              >
+                <Text style={[commonStyles.text, { color: colors.accent, fontWeight: '600' }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[buttonStyles.primary, { flex: 1, marginLeft: 8 }]}
+                onPress={handleSaveNewTask}
+              >
+                <Text style={[commonStyles.text, { fontWeight: '600' }]}>
+                  Add Task
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Timeline Items */}
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={[commonStyles.sectionTitle, { marginBottom: 16 }]}>
-            Timeline Tasks
+            Timeline Tasks {filterCategory !== 'all' && `(${filterCategory})`}
           </Text>
           
-          {timelineItems.map((item) => (
-            <TimelineCard
-              key={item.id}
-              item={item}
-              onToggle={handleToggleComplete}
-            />
-          ))}
+          {filteredItems.length > 0 ? (
+            filteredItems.map((item) => (
+              <TimelineCard
+                key={item.id}
+                item={item}
+                onToggle={handleToggleComplete}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+              />
+            ))
+          ) : (
+            <View style={[commonStyles.card, commonStyles.centerContent]}>
+              <Ionicons name="calendar-outline" size={48} color={colors.textLight} />
+              <Text style={[commonStyles.text, { textAlign: 'center', marginTop: 16 }]}>
+                {filterCategory === 'all' ? 'No tasks added yet' : `No ${filterCategory} tasks found`}
+              </Text>
+              <Text style={[commonStyles.textLight, { textAlign: 'center', marginTop: 8 }]}>
+                {filterCategory === 'all' ? 'Tap the + button to add your first task' : 'Try a different category filter'}
+              </Text>
+            </View>
+          )}
 
           <View style={{ height: 40 }} />
         </ScrollView>

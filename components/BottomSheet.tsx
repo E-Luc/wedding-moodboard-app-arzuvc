@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -39,8 +40,11 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
   const lastGestureY = useRef(0);
   const startPositionY = useRef(0);
 
+  console.log('BottomSheet rendered, isVisible:', isVisible);
+
   useEffect(() => {
     if (isVisible) {
+      console.log('Opening bottom sheet');
       setCurrentSnapPoint(SNAP_POINTS.HALF);
       gestureTranslateY.setValue(0);
       Animated.parallel([
@@ -54,8 +58,11 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
           duration: 300,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]).start(() => {
+        console.log('Bottom sheet opened');
+      });
     } else {
+      console.log('Closing bottom sheet');
       setCurrentSnapPoint(SNAP_POINTS.CLOSED);
       gestureTranslateY.setValue(0);
       Animated.parallel([
@@ -69,30 +76,44 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
           duration: 250,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]).start(() => {
+        console.log('Bottom sheet closed');
+      });
     }
   }, [isVisible, translateY, backdropOpacity]);
 
   const handleBackdropPress = () => {
+    console.log('Backdrop pressed, closing bottom sheet');
     onClose?.();
   };
 
   const snapToPoint = (point: number) => {
+    console.log('Snapping to point:', point);
     setCurrentSnapPoint(point);
     gestureTranslateY.setValue(0);
     Animated.timing(translateY, {
       toValue: SCREEN_HEIGHT - point,
       duration: 300,
       useNativeDriver: true,
-    }).start();
+    }).start(() => {
+      console.log('Snapped to point:', point);
+    });
   };
 
   // Determines the closest snap point based on velocity and position
   const getClosestSnapPoint = (currentY: number, velocityY: number) => {
     const currentPosition = SCREEN_HEIGHT - currentY;
 
-    if (velocityY > 1000) return SNAP_POINTS.CLOSED;
-    if (velocityY < -1000) return SNAP_POINTS.FULL;
+    console.log('Getting closest snap point for position:', currentPosition, 'velocity:', velocityY);
+
+    if (velocityY > 1000) {
+      console.log('Fast downward swipe, closing');
+      return SNAP_POINTS.CLOSED;
+    }
+    if (velocityY < -1000) {
+      console.log('Fast upward swipe, going to full');
+      return SNAP_POINTS.FULL;
+    }
 
     const distances = [
       { point: SNAP_POINTS.HALF, distance: Math.abs(currentPosition - SNAP_POINTS.HALF) },
@@ -100,11 +121,14 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
     ];
 
     if (currentPosition < SNAP_POINTS.HALF * 0.5) {
+      console.log('Position too low, closing');
       return SNAP_POINTS.CLOSED;
     }
 
     distances.sort((a, b) => a.distance - b.distance);
-    return distances[0].point;
+    const closestPoint = distances[0].point;
+    console.log('Closest snap point:', closestPoint);
+    return closestPoint;
   };
 
   // Handles pan gesture events with boundary clamping
@@ -129,8 +153,11 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
     const { state, translationY, velocityY } = event.nativeEvent;
 
     if (state === State.BEGAN) {
+      console.log('Gesture began');
       startPositionY.current = SCREEN_HEIGHT - currentSnapPoint;
     } else if (state === State.END) {
+      console.log('Gesture ended, translationY:', translationY, 'velocityY:', velocityY);
+      
       const currentBasePosition = SCREEN_HEIGHT - currentSnapPoint;
       const intendedPosition = currentBasePosition + translationY;
 
@@ -143,6 +170,7 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
       gestureTranslateY.setValue(0);
 
       if (targetSnapPoint === SNAP_POINTS.CLOSED) {
+        console.log('Target is closed, calling onClose');
         onClose?.();
       } else {
         snapToPoint(targetSnapPoint);
@@ -150,12 +178,20 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
     }
   };
 
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <Modal
       visible={isVisible}
       transparent
       animationType="none"
       statusBarTranslucent
+      onRequestClose={() => {
+        console.log('Modal onRequestClose called');
+        onClose?.();
+      }}
     >
       <View style={styles.container}>
         <TouchableWithoutFeedback onPress={handleBackdropPress}>
@@ -193,7 +229,10 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
                   </Text>
                   <Button
                     title="Close"
-                    onPress={onClose}
+                    onPress={() => {
+                      console.log('Default close button pressed');
+                      onClose?.();
+                    }}
                   />
                 </View>
               )}
@@ -233,7 +272,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: colors.grey || '#cccccc',
+    backgroundColor: colors.textLight || '#cccccc',
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: 8,

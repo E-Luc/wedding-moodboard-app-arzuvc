@@ -1,11 +1,16 @@
+
 // Global error logging for runtime errors
 
 import { Platform } from "react-native";
 
 // Simple debouncing to prevent duplicate errors
 const recentErrors: { [key: string]: boolean } = {};
+
 const clearErrorAfterDelay = (errorKey: string) => {
-  setTimeout(() => delete recentErrors[errorKey], 100);
+  setTimeout(() => {
+    delete recentErrors[errorKey];
+    console.log('Cleared error key:', errorKey);
+  }, 100);
 };
 
 // Function to send errors to parent window (React frontend)
@@ -15,6 +20,7 @@ const sendErrorToParent = (level: string, message: string, data: any) => {
 
   // Skip if we've seen this exact error recently
   if (recentErrors[errorKey]) {
+    console.log('Skipping duplicate error:', errorKey);
     return;
   }
 
@@ -33,6 +39,7 @@ const sendErrorToParent = (level: string, message: string, data: any) => {
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         source: 'expo-template'
       }, '*');
+      console.log('Sent error to parent:', level, message);
     } else {
       // Fallback to console if no parent window
       console.error('🚨 ERROR (no parent):', level, message, data);
@@ -44,7 +51,10 @@ const sendErrorToParent = (level: string, message: string, data: any) => {
 
 // Function to extract meaningful source location from stack trace
 const extractSourceLocation = (stack: string): string => {
-  if (!stack) return '';
+  if (!stack) {
+    console.log('No stack trace provided');
+    return '';
+  }
 
   // Look for various patterns in the stack trace
   const patterns = [
@@ -63,16 +73,21 @@ const extractSourceLocation = (stack: string): string => {
   for (const pattern of patterns) {
     const match = stack.match(pattern);
     if (match) {
-      return ` | Source: ${match[1]}:${match[2]}:${match[3]}`;
+      const location = ` | Source: ${match[1]}:${match[2]}:${match[3]}`;
+      console.log('Extracted source location:', location);
+      return location;
     }
   }
 
   // If no specific pattern matches, try to find any file reference
   const fileMatch = stack.match(/at .+\/([^/\s:)]+\.[jt]sx?):(\d+)/);
   if (fileMatch) {
-    return ` | Source: ${fileMatch[1]}:${fileMatch[2]}`;
+    const location = ` | Source: ${fileMatch[1]}:${fileMatch[2]}`;
+    console.log('Extracted file location:', location);
+    return location;
   }
 
+  console.log('No source location found in stack');
   return '';
 };
 
@@ -81,23 +96,32 @@ const getCallerInfo = (): string => {
   const stack = new Error().stack || '';
   const lines = stack.split('\n');
 
+  console.log('Getting caller info from stack lines:', lines.length);
+
   // Skip the first few lines (Error, getCallerInfo, console override)
   for (let i = 3; i < lines.length; i++) {
     const line = lines[i];
     if (line.indexOf('app/') !== -1 || line.indexOf('components/') !== -1 || line.indexOf('.tsx') !== -1 || line.indexOf('.ts') !== -1) {
       const match = line.match(/at .+\/([^/\s:)]+\.[jt]sx?):(\d+):(\d+)/);
       if (match) {
-        return ` | Called from: ${match[1]}:${match[2]}:${match[3]}`;
+        const callerInfo = ` | Called from: ${match[1]}:${match[2]}:${match[3]}`;
+        console.log('Found caller info:', callerInfo);
+        return callerInfo;
       }
     }
   }
 
+  console.log('No caller info found');
   return '';
 };
 
 export const setupErrorLogging = () => {
+  console.log('Setting up error logging...');
+  
   // Capture unhandled errors in web environment
   if (typeof window !== 'undefined') {
+    console.log('Setting up window error handlers...');
+    
     // Override window.onerror to catch JavaScript errors
     window.onerror = (message, source, lineno, colno, error) => {
       const sourceFile = source ? source.split('/').pop() : 'unknown';
@@ -114,11 +138,14 @@ export const setupErrorLogging = () => {
       sendErrorToParent('error', 'JavaScript Runtime Error', errorData);
       return false; // Don't prevent default error handling
     };
+    
     // check if platform is web
     if (Platform.OS === 'web') {
+      console.log('Setting up unhandled rejection handler...');
+      
       // Capture unhandled promise rejections
       window.addEventListener('unhandledrejection', (event) => {
-          const errorData = {
+        const errorData = {
           reason: event.reason,
           timestamp: new Date().toISOString()
         };
@@ -133,6 +160,8 @@ export const setupErrorLogging = () => {
   const originalConsoleError = console.error;
   const originalConsoleWarn = console.warn;
   const originalConsoleLog = console.log;
+
+  console.log('Error logging setup complete');
 
   // UNCOMMENT BELOW CODE TO GET MORE SENSITIVE ERROR LOGGING (usually many errors triggered per 1 uncaught runtime error)
 
@@ -189,6 +218,8 @@ export const setupErrorLogging = () => {
 
   // Try to intercept React Native warnings at a lower level
   if (typeof window !== 'undefined' && (window as any).__DEV__) {
+    console.log('Setting up React internals error handling...');
+    
     // Override React's warning system if available
     const originalWarn = (window as any).console?.warn || console.warn;
 
@@ -199,9 +230,13 @@ export const setupErrorLogging = () => {
         const originalGetStackAddendum = internals.ReactDebugCurrentFrame.getStackAddendum;
         internals.ReactDebugCurrentFrame.getStackAddendum = function() {
           const stack = originalGetStackAddendum ? originalGetStackAddendum.call(this) : '';
+          console.log('React stack addendum:', stack);
           return stack + ' | Enhanced by error logger';
         };
       }
     }
   }
 };
+
+// Export the utility functions for external use
+export { clearErrorAfterDelay, sendErrorToParent, extractSourceLocation, getCallerInfo };
