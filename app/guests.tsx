@@ -106,6 +106,7 @@ export default function GuestsScreen() {
   const [isAddingGuest, setIsAddingGuest] = useState(false);
   const [newGuestName, setNewGuestName] = useState('');
   const [newGuestEmail, setNewGuestEmail] = useState('');
+  const [newGuestPlusOne, setNewGuestPlusOne] = useState(false);
 
   const handleStatusChange = (id: string, status: Guest['status']) => {
     console.log('Changing guest status:', id, status);
@@ -116,8 +117,72 @@ export default function GuestsScreen() {
 
   const handleEditGuest = (guest: Guest) => {
     console.log('Editing guest:', guest.name);
-    // For now, just show an alert. In a real app, you'd open an edit modal
-    Alert.alert('Edit Guest', `Editing functionality for ${guest.name} will be implemented soon.`);
+    Alert.alert(
+      'Edit Guest',
+      `What would you like to edit for ${guest.name}?`,
+      [
+        { 
+          text: 'Toggle Plus One', 
+          onPress: () => {
+            setGuests(prev => prev.map(g => 
+              g.id === guest.id ? { ...g, plusOne: !g.plusOne } : g
+            ));
+            console.log('Toggled plus one for:', guest.name);
+          }
+        },
+        { 
+          text: 'Change Name', 
+          onPress: () => {
+            Alert.prompt(
+              'Change Name',
+              'Enter new name:',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'Update',
+                  onPress: (newName) => {
+                    if (newName && newName.trim()) {
+                      setGuests(prev => prev.map(g => 
+                        g.id === guest.id ? { ...g, name: newName.trim() } : g
+                      ));
+                      console.log('Updated name for guest:', guest.id, 'to:', newName);
+                    }
+                  }
+                }
+              ],
+              'plain-text',
+              guest.name
+            );
+          }
+        },
+        { 
+          text: 'Change Email', 
+          onPress: () => {
+            Alert.prompt(
+              'Change Email',
+              'Enter new email:',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'Update',
+                  onPress: (newEmail) => {
+                    if (newEmail && newEmail.trim()) {
+                      setGuests(prev => prev.map(g => 
+                        g.id === guest.id ? { ...g, email: newEmail.trim() } : g
+                      ));
+                      console.log('Updated email for guest:', guest.id, 'to:', newEmail);
+                    }
+                  }
+                }
+              ],
+              'plain-text',
+              guest.email
+            );
+          }
+        },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
   };
 
   const handleDeleteGuest = (id: string) => {
@@ -154,13 +219,14 @@ export default function GuestsScreen() {
         name: newGuestName.trim(),
         email: newGuestEmail.trim(),
         status: 'pending',
-        plusOne: false
+        plusOne: newGuestPlusOne
       };
       
       console.log('Saving new guest:', newGuest);
       setGuests(prev => [...prev, newGuest]);
       setNewGuestName('');
       setNewGuestEmail('');
+      setNewGuestPlusOne(false);
       setIsAddingGuest(false);
     } else {
       Alert.alert('Error', 'Please enter both name and email for the guest.');
@@ -171,6 +237,7 @@ export default function GuestsScreen() {
     console.log('Cancelling add guest');
     setNewGuestName('');
     setNewGuestEmail('');
+    setNewGuestPlusOne(false);
     setIsAddingGuest(false);
   };
 
@@ -252,7 +319,7 @@ export default function GuestsScreen() {
               onChangeText={setNewGuestName}
             />
             <TextInput
-              style={[commonStyles.cardSmall, { marginBottom: 16 }]}
+              style={[commonStyles.cardSmall, { marginBottom: 12 }]}
               placeholder="Email Address"
               placeholderTextColor={colors.textLight}
               value={newGuestEmail}
@@ -260,6 +327,25 @@ export default function GuestsScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
             />
+            <TouchableOpacity 
+              style={[commonStyles.cardSmall, { 
+                marginBottom: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }]}
+              onPress={() => {
+                console.log('Toggling plus one for new guest');
+                setNewGuestPlusOne(!newGuestPlusOne);
+              }}
+            >
+              <Text style={commonStyles.text}>Plus One</Text>
+              <Ionicons 
+                name={newGuestPlusOne ? 'checkmark-circle' : 'ellipse-outline'} 
+                size={24} 
+                color={newGuestPlusOne ? colors.success : colors.textLight} 
+              />
+            </TouchableOpacity>
             <View style={commonStyles.row}>
               <TouchableOpacity 
                 style={[buttonStyles.outline, { flex: 1, marginRight: 8 }]}

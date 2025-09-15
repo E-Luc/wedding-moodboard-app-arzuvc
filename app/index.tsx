@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text, View, ScrollView, TouchableOpacity, Dimensions, Image, ImageBackground } from 'react-native';
 import { commonStyles, colors, buttonStyles } from '../styles/commonStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { useFonts, Montserrat_400Regular, Montserrat_600SemiBold, Montserrat_700
 import { Lato_400Regular, Lato_700Bold } from '@expo-google-fonts/lato';
 import { router } from 'expo-router';
 import SimpleBottomSheet from '../components/BottomSheet';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
@@ -84,6 +85,8 @@ const QuickAction: React.FC<QuickActionProps> = ({ icon, title, subtitle, onPres
 export default function MainScreen() {
   const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string>('');
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   let [fontsLoaded] = useFonts({
     Montserrat_400Regular,
@@ -93,14 +96,33 @@ export default function MainScreen() {
     Lato_700Bold,
   });
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
+
   console.log('MainScreen rendered, fonts loaded:', fontsLoaded);
 
   if (!fontsLoaded) {
     return (
       <SafeAreaView style={commonStyles.container}>
-        <View style={[commonStyles.container, commonStyles.centerContent]}>
-          <Text style={commonStyles.text}>Loading fonts...</Text>
-        </View>
+        <LinearGradient
+          colors={[colors.accent + '20', colors.background]}
+          style={[commonStyles.container, commonStyles.centerContent]}
+        >
+          <View style={{
+            backgroundColor: colors.accent + '20',
+            borderRadius: 50,
+            padding: 20,
+            marginBottom: 20,
+          }}>
+            <Ionicons name="heart" size={40} color={colors.accent} />
+          </View>
+          <Text style={[commonStyles.text, { fontSize: 18 }]}>Loading My Wedding Planist...</Text>
+        </LinearGradient>
       </SafeAreaView>
     );
   }
@@ -127,9 +149,12 @@ export default function MainScreen() {
         router.push('/budget');
         break;
       case 'Vendor Hub':
-        console.log('Opening vendor hub bottom sheet');
-        setSelectedAction('Vendor Hub');
-        setIsBottomSheetVisible(true);
+        console.log('Navigating to vendor hub screen');
+        router.push('/vendors');
+        break;
+      case 'Inspiration Board':
+        console.log('Navigating to inspiration board screen');
+        router.push('/inspiration');
         break;
       default:
         console.log('Unknown feature:', feature);
@@ -154,17 +179,32 @@ export default function MainScreen() {
         router.push('/timeline');
         break;
       case 'Inspiration Board':
-        console.log('Inspiration board feature not yet implemented');
+        router.push('/inspiration');
         break;
       case 'Contact Vendor':
-        console.log('Contact vendor feature not yet implemented');
+        router.push('/vendors');
         break;
       case 'Vendor Hub':
-        console.log('Vendor hub feature not yet implemented');
+        router.push('/vendors');
         break;
       default:
         console.log('No specific action for:', selectedAction);
     }
+  };
+
+  const getGreeting = () => {
+    const hour = currentTime.getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  const getDaysUntilWedding = () => {
+    const weddingDate = new Date('2024-06-21');
+    const today = new Date();
+    const diffTime = weddingDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
   };
 
   const features = [
@@ -192,6 +232,12 @@ export default function MainScreen() {
       description: 'Manage all vendors',
       color: colors.warning,
     },
+    {
+      icon: 'camera' as keyof typeof Ionicons.glyphMap,
+      title: 'Inspiration Board',
+      description: 'Save ideas & photos',
+      color: '#E91E63',
+    },
   ];
 
   const quickActions = [
@@ -217,13 +263,210 @@ export default function MainScreen() {
     },
   ];
 
+  if (showWelcome) {
+    return (
+      <SafeAreaView style={commonStyles.container}>
+        <LinearGradient
+          colors={[colors.accent + '30', colors.background]}
+          style={commonStyles.container}
+        >
+          <ScrollView style={commonStyles.content} showsVerticalScrollIndicator={false}>
+            {/* Welcome Hero Section */}
+            <View style={[commonStyles.centerContent, { marginTop: 60, marginBottom: 40 }]}>
+              <View style={{
+                backgroundColor: colors.accent + '20',
+                borderRadius: 80,
+                padding: 30,
+                marginBottom: 30,
+                boxShadow: '0px 8px 24px rgba(244, 194, 194, 0.4)',
+                elevation: 8,
+              }}>
+                <Ionicons name="heart" size={60} color={colors.accent} />
+              </View>
+              
+              <Text style={[commonStyles.title, { 
+                fontSize: 36, 
+                textAlign: 'center',
+                marginBottom: 12,
+                color: colors.text,
+              }]}>
+                My Wedding Planist
+              </Text>
+              
+              <Text style={[commonStyles.subtitle, { 
+                textAlign: 'center',
+                fontSize: 20,
+                marginBottom: 8,
+              }]}>
+                {getGreeting()}! ✨
+              </Text>
+              
+              <Text style={[commonStyles.textLight, { 
+                textAlign: 'center',
+                fontSize: 16,
+                marginBottom: 30,
+              }]}>
+                Your dream wedding, perfectly planned
+              </Text>
+
+              {/* Wedding Countdown */}
+              <View style={[commonStyles.card, { 
+                alignItems: 'center', 
+                marginBottom: 30,
+                backgroundColor: colors.accent + '10',
+                borderColor: colors.accent + '30',
+              }]}>
+                <Text style={[commonStyles.text, { 
+                  fontSize: 48, 
+                  fontWeight: '700', 
+                  color: colors.accent,
+                  marginBottom: 8,
+                }]}>
+                  {getDaysUntilWedding()}
+                </Text>
+                <Text style={[commonStyles.text, { 
+                  fontSize: 18, 
+                  fontWeight: '600',
+                  marginBottom: 4,
+                }]}>
+                  Days Until Your Wedding
+                </Text>
+                <Text style={[commonStyles.textLight, { textAlign: 'center' }]}>
+                  June 21, 2024 • The most important day of your life
+                </Text>
+              </View>
+
+              {/* Action Buttons */}
+              <View style={{ width: '100%', gap: 16 }}>
+                <TouchableOpacity 
+                  style={[buttonStyles.primary, { 
+                    paddingVertical: 16,
+                    boxShadow: '0px 4px 16px rgba(244, 194, 194, 0.4)',
+                    elevation: 6,
+                  }]}
+                  onPress={() => {
+                    console.log('Start Planning button pressed');
+                    setShowWelcome(false);
+                  }}
+                >
+                  <Text style={[commonStyles.text, { 
+                    color: colors.text, 
+                    fontWeight: '700',
+                    fontSize: 18,
+                  }]}>
+                    Start Planning Your Wedding
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[buttonStyles.outline, { 
+                    paddingVertical: 16,
+                    borderWidth: 2,
+                  }]}
+                  onPress={() => {
+                    console.log('Continue Planning button pressed');
+                    setShowWelcome(false);
+                  }}
+                >
+                  <Text style={[commonStyles.text, { 
+                    color: colors.accent, 
+                    fontWeight: '600',
+                    fontSize: 16,
+                  }]}>
+                    Continue Planning
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Quick Preview Cards */}
+            <View style={{ marginBottom: 40 }}>
+              <Text style={[commonStyles.sectionTitle, { 
+                textAlign: 'center', 
+                marginBottom: 24,
+                fontSize: 20,
+              }]}>
+                Everything You Need
+              </Text>
+              
+              <View style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}>
+                {features.slice(0, 4).map((feature, index) => (
+                  <View
+                    key={index}
+                    style={[commonStyles.card, { 
+                      width: (width - 60) / 2,
+                      alignItems: 'center',
+                      paddingVertical: 20,
+                    }]}
+                  >
+                    <View style={{
+                      backgroundColor: feature.color + '20',
+                      borderRadius: 20,
+                      padding: 12,
+                      marginBottom: 12,
+                    }}>
+                      <Ionicons name={feature.icon} size={24} color={feature.color} />
+                    </View>
+                    <Text style={[commonStyles.text, { 
+                      fontWeight: '600', 
+                      textAlign: 'center',
+                      fontSize: 14,
+                    }]}>
+                      {feature.title}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={commonStyles.container}>
       <ScrollView style={commonStyles.content} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={{ marginBottom: 32 }}>
-          <Text style={commonStyles.title}>My Wedding Planist</Text>
-          <Text style={commonStyles.subtitle}>Your dream wedding, perfectly planned</Text>
+          <View style={[commonStyles.row, { marginBottom: 16 }]}>
+            <View>
+              <Text style={[commonStyles.title, { fontSize: 28, marginBottom: 4 }]}>
+                {getGreeting()}! 👋
+              </Text>
+              <Text style={commonStyles.subtitle}>Ready to plan your perfect day?</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity 
+                onPress={() => {
+                  console.log('Help button pressed');
+                  router.push('/help');
+                }}
+                style={{
+                  backgroundColor: colors.success + '20',
+                  borderRadius: 20,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="help-circle" size={24} color={colors.success} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => setShowWelcome(true)}
+                style={{
+                  backgroundColor: colors.accent + '20',
+                  borderRadius: 20,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="heart" size={24} color={colors.accent} />
+              </TouchableOpacity>
+            </View>
+          </View>
           
           <View style={commonStyles.row}>
             <TouchableOpacity 

@@ -219,7 +219,86 @@ export default function TimelineScreen() {
 
   const handleEditTask = (task: TimelineItem) => {
     console.log('Editing task:', task.title);
-    Alert.alert('Edit Task', `Editing functionality for "${task.title}" will be implemented soon.`);
+    Alert.alert(
+      'Edit Task',
+      `What would you like to edit for "${task.title}"?`,
+      [
+        { 
+          text: 'Edit Title', 
+          onPress: () => {
+            Alert.prompt(
+              'Edit Title',
+              'Enter new title:',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'Update',
+                  onPress: (newTitle) => {
+                    if (newTitle && newTitle.trim()) {
+                      setTimelineItems(prev => prev.map(item =>
+                        item.id === task.id ? { ...item, title: newTitle.trim() } : item
+                      ));
+                      console.log('Updated title for task:', task.id, 'to:', newTitle);
+                    }
+                  }
+                }
+              ],
+              'plain-text',
+              task.title
+            );
+          }
+        },
+        { 
+          text: 'Edit Description', 
+          onPress: () => {
+            Alert.prompt(
+              'Edit Description',
+              'Enter new description:',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'Update',
+                  onPress: (newDescription) => {
+                    if (newDescription && newDescription.trim()) {
+                      setTimelineItems(prev => prev.map(item =>
+                        item.id === task.id ? { ...item, description: newDescription.trim() } : item
+                      ));
+                      console.log('Updated description for task:', task.id, 'to:', newDescription);
+                    }
+                  }
+                }
+              ],
+              'plain-text',
+              task.description
+            );
+          }
+        },
+        { 
+          text: 'Change Category', 
+          onPress: () => {
+            Alert.alert(
+              'Change Category',
+              'Select new category:',
+              [
+                { text: 'Planning', onPress: () => updateTaskCategory(task.id, 'planning') },
+                { text: 'Booking', onPress: () => updateTaskCategory(task.id, 'booking') },
+                { text: 'Preparation', onPress: () => updateTaskCategory(task.id, 'preparation') },
+                { text: 'Ceremony', onPress: () => updateTaskCategory(task.id, 'ceremony') },
+                { text: 'Cancel', style: 'cancel' }
+              ]
+            );
+          }
+        },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
+  const updateTaskCategory = (id: string, category: TimelineItem['category']) => {
+    setTimelineItems(prev => prev.map(item =>
+      item.id === id ? { ...item, category } : item
+    ));
+    console.log('Updated category for task:', id, 'to:', category);
   };
 
   const handleDeleteTask = (id: string) => {

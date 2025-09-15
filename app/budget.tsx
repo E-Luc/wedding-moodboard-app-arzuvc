@@ -123,26 +123,60 @@ export default function BudgetScreen() {
 
   const handleEditBudgetItem = (item: BudgetItem) => {
     console.log('Editing budget item:', item.category);
-    Alert.prompt(
-      'Edit Budget',
-      `Enter new budget amount for ${item.category}:`,
+    Alert.alert(
+      'Edit Budget Item',
+      `What would you like to edit for ${item.category}?`,
       [
-        { text: 'Cancel', style: 'cancel' },
         { 
-          text: 'Update',
-          onPress: (value) => {
-            const newBudget = parseFloat(value || '0');
-            if (newBudget > 0) {
-              setBudgetItems(prev => prev.map(budgetItem =>
-                budgetItem.id === item.id ? { ...budgetItem, budgeted: newBudget } : budgetItem
-              ));
-              console.log('Updated budget for', item.category, 'to', newBudget);
-            }
+          text: 'Edit Budget Amount', 
+          onPress: () => {
+            Alert.prompt(
+              'Edit Budget',
+              `Enter new budget amount for ${item.category}:`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'Update',
+                  onPress: (value) => {
+                    const newBudget = parseFloat(value || '0');
+                    if (newBudget > 0) {
+                      setBudgetItems(prev => prev.map(budgetItem =>
+                        budgetItem.id === item.id ? { ...budgetItem, budgeted: newBudget } : budgetItem
+                      ));
+                      console.log('Updated budget for', item.category, 'to', newBudget);
+                    }
+                  }
+                }
+              ],
+              'plain-text',
+              item.budgeted.toString()
+            );
           }
-        }
-      ],
-      'plain-text',
-      item.budgeted.toString()
+        },
+        { 
+          text: 'Reset Spent Amount', 
+          onPress: () => {
+            Alert.alert(
+              'Reset Spent Amount',
+              `Are you sure you want to reset the spent amount for ${item.category} to €0?`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'Reset', 
+                  style: 'destructive',
+                  onPress: () => {
+                    setBudgetItems(prev => prev.map(budgetItem =>
+                      budgetItem.id === item.id ? { ...budgetItem, spent: 0 } : budgetItem
+                    ));
+                    console.log('Reset spent amount for', item.category);
+                  }
+                }
+              ]
+            );
+          }
+        },
+        { text: 'Cancel', style: 'cancel' }
+      ]
     );
   };
 
