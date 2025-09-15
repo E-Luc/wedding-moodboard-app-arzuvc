@@ -1,26 +1,52 @@
+
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
 export const colors = {
-  primary: '#162456',    // Material Blue
-  secondary: '#193cb8',  // Darker Blue
-  accent: '#64B5F6',     // Light Blue
-  background: '#101824',  // Keeping dark background
-  backgroundAlt: '#162133',  // Keeping dark background
-  text: '#e3e3e3',       // Keeping light text
-  grey: '#90CAF9',       // Light Blue Grey
-  card: '#193cb8',       // Keeping dark card background
+  primary: '#F8F8F8',      // Pure white background
+  secondary: '#2C2C2C',    // Dark grey for text
+  accent: '#F4C2C2',       // Pastel pink
+  gold: '#D4AF37',         // Gold accent
+  background: '#FFFFFF',   // White background
+  backgroundAlt: '#FAFAFA', // Light grey background
+  text: '#2C2C2C',         // Dark grey text
+  textLight: '#6B6B6B',    // Light grey text
+  card: '#FFFFFF',         // White card background
+  border: '#E8E8E8',       // Light border
+  success: '#4CAF50',      // Success green
+  warning: '#FF9800',      // Warning orange
+  error: '#F44336',        // Error red
 };
 
 export const buttonStyles = StyleSheet.create({
-  instructionsButton: {
-    backgroundColor: colors.primary,
-    alignSelf: 'center',
-    width: '100%',
+  primary: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0px 2px 8px rgba(244, 194, 194, 0.3)',
+    elevation: 3,
   },
-  backButton: {
-    backgroundColor: colors.backgroundAlt,
-    alignSelf: 'center',
-    width: '100%',
+  secondary: {
+    backgroundColor: colors.gold,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0px 2px 8px rgba(212, 175, 55, 0.3)',
+    elevation: 3,
+  },
+  outline: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: colors.accent,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
@@ -35,55 +61,87 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: colors.background,
     width: '100%',
     height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   content: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    maxWidth: 800,
-    width: '100%',
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
-    textAlign: 'center',
+    fontSize: 32,
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: 10
+    marginBottom: 8,
+    fontFamily: 'Montserrat_700Bold',
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: '400',
+    color: colors.textLight,
+    marginBottom: 24,
+    fontFamily: 'Lato_400Regular',
   },
   text: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '400',
     color: colors.text,
-    marginBottom: 8,
     lineHeight: 24,
-    textAlign: 'center',
+    fontFamily: 'Lato_400Regular',
+  },
+  textLight: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: colors.textLight,
+    lineHeight: 20,
+    fontFamily: 'Lato_400Regular',
   },
   section: {
-    width: '100%',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+    marginBottom: 32,
   },
-  buttonContainer: {
-    width: '100%',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 16,
+    fontFamily: 'Montserrat_600SemiBold',
   },
   card: {
-    backgroundColor: colors.backgroundAlt,
-    borderColor: colors.grey,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.08)',
+    elevation: 4,
     borderWidth: 1,
-    borderRadius: 10,
-    padding: 10,
-    marginVertical: 8,
-    width: '100%',
-    boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
+    borderColor: colors.border,
+  },
+  cardSmall: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.06)',
     elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  centerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   icon: {
-    width: 60,
-    height: 60,
-    tintColor: "white",
+    width: 24,
+    height: 24,
+    tintColor: colors.text,
+  },
+  iconLarge: {
+    width: 48,
+    height: 48,
+    tintColor: colors.accent,
   },
 });
