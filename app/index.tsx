@@ -311,7 +311,7 @@ export default function MainScreen() {
                 <Text style={commonStyles.textLight}>
                   Budget Used
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
