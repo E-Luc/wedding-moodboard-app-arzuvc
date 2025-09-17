@@ -80,7 +80,7 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
         console.log('Bottom sheet closed');
       });
     }
-  }, [isVisible, translateY, backdropOpacity]);
+  }, [isVisible, translateY, backdropOpacity, gestureTranslateY]);
 
   const handleBackdropPress = () => {
     console.log('Backdrop pressed, closing bottom sheet');

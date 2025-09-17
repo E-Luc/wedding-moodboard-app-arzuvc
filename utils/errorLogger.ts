@@ -6,7 +6,7 @@ import { Platform } from "react-native";
 // Simple debouncing to prevent duplicate errors
 const recentErrors: { [key: string]: boolean } = {};
 
-export const clearErrorAfterDelay = (errorKey: string) => {
+const clearErrorAfterDelay = (errorKey: string) => {
   setTimeout(() => {
     delete recentErrors[errorKey];
     console.log('Cleared error key:', errorKey);
@@ -14,7 +14,7 @@ export const clearErrorAfterDelay = (errorKey: string) => {
 };
 
 // Function to send errors to parent window (React frontend)
-export const sendErrorToParent = (level: string, message: string, data: any) => {
+const sendErrorToParent = (level: string, message: string, data: any) => {
   // Create a simple key to identify duplicate errors
   const errorKey = `${level}:${message}:${JSON.stringify(data)}`;
 
@@ -50,7 +50,7 @@ export const sendErrorToParent = (level: string, message: string, data: any) => 
 };
 
 // Function to extract meaningful source location from stack trace
-export const extractSourceLocation = (stack: string): string => {
+const extractSourceLocation = (stack: string): string => {
   if (!stack) {
     console.log('No stack trace provided');
     return '';
@@ -92,7 +92,7 @@ export const extractSourceLocation = (stack: string): string => {
 };
 
 // Function to get caller information from stack trace
-export const getCallerInfo = (): string => {
+const getCallerInfo = (): string => {
   const stack = new Error().stack || '';
   const lines = stack.split('\n');
 
