@@ -45,7 +45,7 @@ export default function RootLayout() {
     }
 
     setIsNavigationReady(true);
-  }, [isAuthenticated, loading, segments, user?.profileComplete]);
+  }, [isAuthenticated, loading, segments, user?.profileComplete, router]);
 
   if (loading || !isNavigationReady) {
     return null; // Or a loading screen

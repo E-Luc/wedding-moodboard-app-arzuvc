@@ -432,11 +432,25 @@ const resources = {
   }
 };
 
+// Get device locale, fallback to 'en' if not available
+const getDeviceLanguage = () => {
+  try {
+    const locales = Localization.getLocales();
+    if (locales && locales.length > 0) {
+      return locales[0].languageCode || 'en';
+    }
+    return 'en';
+  } catch (error) {
+    console.log('Error getting device language:', error);
+    return 'en';
+  }
+};
+
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: Localization.locale.split('-')[0] || 'en',
+    lng: getDeviceLanguage(),
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
