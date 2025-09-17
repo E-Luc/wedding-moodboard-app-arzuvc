@@ -1,59 +1,73 @@
-import { Stack, useGlobalSearchParams } from 'expo-router';
-import { SafeAreaProvider, useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
-import { useEffect, useState } from 'react';
-import { setupErrorLogging } from '../utils/errorLogger';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-const STORAGE_KEY = 'emulated_device';
+import React, { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { setupErrorLogging } from '../utils/errorLogger';
+import { useAuth } from '../hooks/useAuth';
+import '../utils/i18n';
+
+const STORAGE_KEY = 'natively_emulate_device';
 
 export default function RootLayout() {
-  const actualInsets = useSafeAreaInsets();
-  const { emulate } = useGlobalSearchParams<{ emulate?: string }>();
-  const [storedEmulate, setStoredEmulate] = useState<string | null>(null);
+  const { isAuthenticated, loading, user } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
 
   useEffect(() => {
-    // Set up global error logging
     setupErrorLogging();
+    console.log('RootLayout mounted, setting up error logging');
+  }, []);
 
-    if (Platform.OS === 'web') {
-      // If there's a new emulate parameter, store it
-      if (emulate) {
-        localStorage.setItem(STORAGE_KEY, emulate);
-        setStoredEmulate(emulate);
-      } else {
-        // If no emulate parameter, try to get from localStorage
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setStoredEmulate(stored);
-        }
-      }
+  useEffect(() => {
+    if (loading) return;
+
+    const inAuthGroup = segments[0] === 'auth' || segments[0] === 'profile-setup';
+    
+    console.log('Navigation effect:', {
+      isAuthenticated,
+      segments,
+      inAuthGroup,
+      profileComplete: user?.profileComplete
+    });
+
+    if (!isAuthenticated && !inAuthGroup) {
+      console.log('Redirecting to auth - user not authenticated');
+      router.replace('/auth');
+    } else if (isAuthenticated && !user?.profileComplete && segments[0] !== 'profile-setup') {
+      console.log('Redirecting to profile setup - profile incomplete');
+      router.replace('/profile-setup');
+    } else if (isAuthenticated && user?.profileComplete && inAuthGroup) {
+      console.log('Redirecting to home - user authenticated and profile complete');
+      router.replace('/');
     }
-  }, [emulate]);
 
-  let insetsToUse = actualInsets;
+    setIsNavigationReady(true);
+  }, [isAuthenticated, loading, segments, user?.profileComplete]);
 
-  if (Platform.OS === 'web') {
-    const simulatedInsets = {
-      ios: { top: 47, bottom: 20, left: 0, right: 0 },
-      android: { top: 40, bottom: 0, left: 0, right: 0 },
-    };
-
-    // Use stored emulate value if available, otherwise use the current emulate parameter
-    const deviceToEmulate = storedEmulate || emulate;
-    insetsToUse = deviceToEmulate ? simulatedInsets[deviceToEmulate as keyof typeof simulatedInsets] || actualInsets : actualInsets;
+  if (loading || !isNavigationReady) {
+    return null; // Or a loading screen
   }
 
   return (
-    <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'default',
-            }}
-          />
-        </GestureHandlerRootView>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="auth" />
+          <Stack.Screen name="profile-setup" />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="guests" />
+          <Stack.Screen name="budget" />
+          <Stack.Screen name="timeline" />
+          <Stack.Screen name="vendors" />
+          <Stack.Screen name="inspiration" />
+          <Stack.Screen name="help" />
+        </Stack>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
