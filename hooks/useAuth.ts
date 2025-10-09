@@ -1,25 +1,72 @@
-
 import { useState, useEffect } from 'react';
-import { User, UserLogin, UserRegistration } from '../types/User';
-import Storage from '../utils/storage';
+import { supabase } from '../utils/supabase';
+import { User as SupabaseUser } from '@supabase/supabase-js';
+
+interface AuthUser {
+  id: string;
+  email: string;
+  profileComplete: boolean;
+  firstName?: string;
+  lastName?: string;
+}
+
+interface UserLogin {
+  email: string;
+  password: string;
+}
+
+interface UserRegistration {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const authUser: AuthUser = {
+          id: session.user.id,
+          email: session.user.email || '',
+          profileComplete: session.user.user_metadata?.profileComplete || false,
+          firstName: session.user.user_metadata?.firstName,
+          lastName: session.user.user_metadata?.lastName,
+        };
+        setUser(authUser);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const checkAuthStatus = async () => {
     try {
-      console.log('Checking auth status...');
-      const userData = await Storage.getItem('currentUser');
-      if (userData) {
-        setUser(userData);
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        const authUser: AuthUser = {
+          id: session.user.id,
+          email: session.user.email || '',
+          profileComplete: session.user.user_metadata?.profileComplete || false,
+          firstName: session.user.user_metadata?.firstName,
+          lastName: session.user.user_metadata?.lastName,
+        };
+        setUser(authUser);
         setIsAuthenticated(true);
-        console.log('User authenticated:', userData.email);
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
@@ -30,47 +77,29 @@ export const useAuth = () => {
 
   const login = async (credentials: UserLogin): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('Attempting login for:', credentials.email);
-      
-      // Check for admin account
-      if (credentials.email === 'admin' && credentials.password === 'admin') {
-        const adminUser: User = {
-          id: 'admin',
-          email: 'admin',
-          firstName: 'Admin',
-          lastName: 'User',
-          profileComplete: true,
-          isAdmin: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const authUser: AuthUser = {
+          id: data.user.id,
+          email: data.user.email || '',
+          profileComplete: data.user.user_metadata?.profileComplete || false,
+          firstName: data.user.user_metadata?.firstName,
+          lastName: data.user.user_metadata?.lastName,
         };
-        
-        await Storage.setItem('currentUser', adminUser);
-        setUser(adminUser);
+        setUser(authUser);
         setIsAuthenticated(true);
-        console.log('Admin login successful');
         return { success: true };
       }
 
-      // Check existing users
-      const users = await Storage.getItem('users') || [];
-      const existingUser = users.find((u: User) => u.email === credentials.email);
-      
-      if (!existingUser) {
-        return { success: false, error: 'User not found' };
-      }
-
-      // In a real app, you would verify the password hash
-      const storedPassword = await Storage.getItem(`password_${existingUser.id}`);
-      if (storedPassword !== credentials.password) {
-        return { success: false, error: 'Invalid password' };
-      }
-
-      await Storage.setItem('currentUser', existingUser);
-      setUser(existingUser);
-      setIsAuthenticated(true);
-      console.log('Login successful for:', existingUser.email);
-      return { success: true };
+      return { success: false, error: 'Login failed' };
     } catch (error) {
       console.error('Login error:', error);
       return { success: false, error: 'Login failed' };
@@ -79,37 +108,36 @@ export const useAuth = () => {
 
   const register = async (userData: UserRegistration): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('Attempting registration for:', userData.email);
-      
-      // Check if user already exists
-      const users = await Storage.getItem('users') || [];
-      const existingUser = users.find((u: User) => u.email === userData.email);
-      
-      if (existingUser) {
-        return { success: false, error: 'User already exists' };
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            profileComplete: false,
+          },
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
       }
 
-      // Create new user
-      const newUser: User = {
-        id: Date.now().toString(),
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        profileComplete: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      if (data.user) {
+        const authUser: AuthUser = {
+          id: data.user.id,
+          email: data.user.email || '',
+          profileComplete: false,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+        };
+        setUser(authUser);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
 
-      // Save user and password
-      const updatedUsers = [...users, newUser];
-      await Storage.setItem('users', updatedUsers);
-      await Storage.setItem(`password_${newUser.id}`, userData.password);
-      await Storage.setItem('currentUser', newUser);
-      
-      setUser(newUser);
-      setIsAuthenticated(true);
-      console.log('Registration successful for:', newUser.email);
-      return { success: true };
+      return { success: false, error: 'Registration failed' };
     } catch (error) {
       console.error('Registration error:', error);
       return { success: false, error: 'Registration failed' };
@@ -118,8 +146,7 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
-      console.log('Logging out user');
-      await Storage.removeItem('currentUser');
+      await supabase.auth.signOut();
       setUser(null);
       setIsAuthenticated(false);
     } catch (error) {
@@ -127,30 +154,22 @@ export const useAuth = () => {
     }
   };
 
-  const updateProfile = async (updates: Partial<User>): Promise<{ success: boolean; error?: string }> => {
+  const updateProfile = async (updates: Partial<AuthUser>): Promise<{ success: boolean; error?: string }> => {
     try {
       if (!user) return { success: false, error: 'No user logged in' };
-      
-      console.log('Updating profile for:', user.email);
-      const updatedUser = { 
-        ...user, 
-        ...updates, 
-        updatedAt: new Date().toISOString() 
-      };
-      
-      // Update in users array
-      const users = await Storage.getItem('users') || [];
-      const userIndex = users.findIndex((u: User) => u.id === user.id);
-      if (userIndex !== -1) {
-        users[userIndex] = updatedUser;
-        await Storage.setItem('users', users);
+
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          ...user,
+          ...updates,
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
       }
-      
-      // Update current user
-      await Storage.setItem('currentUser', updatedUser);
-      setUser(updatedUser);
-      
-      console.log('Profile updated successfully');
+
+      setUser({ ...user, ...updates });
       return { success: true };
     } catch (error) {
       console.error('Profile update error:', error);
