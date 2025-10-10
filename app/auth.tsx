@@ -146,19 +146,20 @@ const AuthScreen = () => {
             <View style={{ flex: 1, justifyContent: 'center', padding: 20 }}>
               {/* Logo and Welcome */}
               <View style={[commonStyles.centerContent, { marginBottom: 40 }]}>
-                <Image
-                  source={require('../assets/images/fcc010d3-fb12-4957-8141-9246ba015046.png')}
-                  style={{
-                    width: 120,
-                    height: 120,
-                    marginBottom: 20,
-                    borderRadius: 60,
-                  }}
-                  resizeMode="contain"
-                />
-                
-                <Text style={[commonStyles.title, { 
-                  fontSize: 32, 
+                <View style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: 60,
+                  backgroundColor: colors.accentLight,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 20,
+                }}>
+                  <Ionicons name="heart" size={60} color={colors.accent} />
+                </View>
+
+                <Text style={[commonStyles.title, {
+                  fontSize: 32,
                   textAlign: 'center',
                   marginBottom: 8,
                 }]}>
